@@ -192,14 +192,18 @@ else {
     $configuration.Output.Verbosity = 'Normal'
     # The tests run under PowerShell's default error preference, as they do under a plain
     # Invoke-Pester, so this script's stop-on-error does not turn a Write-Error a test checks
-    # into a throw. Pester runs the tests in this script's session state, so a child scope
-    # is not enough: the script-level preference changes for the run and is restored after.
+    # into a throw. Tests run in this script's session state, and functions of the module
+    # under test read the global preference, which a GitHub pwsh step sets to stop before it
+    # dot-sources its script. So both change for the run and are restored after.
+    $callerPreference = $global:ErrorActionPreference
+    $global:ErrorActionPreference = 'Continue'
     $ErrorActionPreference = 'Continue'
     try {
         $result = Invoke-Pester -Configuration $configuration
     }
     finally {
         $ErrorActionPreference = 'Stop'
+        $global:ErrorActionPreference = $callerPreference
     }
     if ($result.FailedCount -gt 0 -or $result.Result -ne 'Passed') {
         Write-CheckResult -Check 'test' -Passed $false -Detail "$($result.FailedCount) failed, $($result.PassedCount) passed"

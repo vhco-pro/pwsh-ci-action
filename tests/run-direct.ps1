@@ -15,3 +15,5 @@ if ($AllowNoTests -eq 'true') { $arguments.AllowNoTests = $true }
 $exitCode = $LASTEXITCODE
 Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exit-code=$exitCode"
 Write-Output "ci.ps1 exited $exitCode"
+# The verdict is in the output; a GitHub pwsh step would fail on the non-zero $LASTEXITCODE.
+exit 0

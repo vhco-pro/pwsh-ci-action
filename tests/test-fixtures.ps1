@@ -69,3 +69,6 @@ if ($script:failures -gt 0) {
     exit 1
 }
 Write-Output 'all cases passed'
+# The last child run may have left a non-zero $LASTEXITCODE, which a GitHub pwsh step
+# would report as a failure.
+exit 0

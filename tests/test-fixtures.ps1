@@ -84,6 +84,19 @@ function Get-Spaced {
 '@
 }
 
+Invoke-Case -Name 'wrong-casing' -ExpectExit 1 -ExpectText 'pwsh-ci: format: FAILED' -Change {
+    param($dir)
+    Add-File (Join-Path $dir 'Public' 'Get-Lower.ps1') @'
+function Get-Lower {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    write-output 'lower'
+}
+'@
+}
+
 Invoke-Case -Name 'no-formatting-rule' -ExpectExit 1 -ExpectText 'configures no formatting rule' -Change {
     param($dir)
     Add-File (Join-Path $dir 'PSScriptAnalyzerSettings.psd1') '@{ ExcludeRules = @() }'

@@ -1,0 +1,44 @@
+name: PowerShell CI
+description: Run blocking PowerShell checks - formatting, PSScriptAnalyzer, module loading and Pester
+
+inputs:
+  path:
+    description: Directory to check, relative to the workspace
+    default: .
+  settings:
+    description: PSScriptAnalyzer settings file relative to path; required, and must configure formatting rules
+    default: PSScriptAnalyzerSettings.psd1
+  module-manifest:
+    description: Optional .psd1 or .psm1 relative to path, imported in a fresh process that stops on the first error
+    default: ''
+  tests:
+    description: Pester tests directory relative to path
+    default: tests
+  allow-no-tests:
+    description: true lets a run with no Pester tests pass
+    default: 'false'
+
+outputs:
+  pwsh-version:
+    description: The PowerShell version the checks ran on
+    value: ${{ steps.pwsh.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up PowerShell
+      id: pwsh
+      uses: vhco-pro/setup-pwsh-action@546ea415f9a1de6ed86d46796d839e61e20b4089 # unreleased: vhco-pro/setup-pwsh-action#1
+    - name: Run the PowerShell checks
+      shell: pwsh
+      env:
+        PWSH_CI_PATH: ${{ inputs.path }}
+        PWSH_CI_SETTINGS: ${{ inputs.settings }}
+        PWSH_CI_MODULE_MANIFEST: ${{ inputs.module-manifest }}
+        PWSH_CI_TESTS: ${{ inputs.tests }}
+        PWSH_CI_ALLOW_NO_TESTS: ${{ inputs.allow-no-tests }}
+      run: '& (Join-Path $env:GITHUB_ACTION_PATH ''scripts'' ''run-from-action.ps1'')'
+
+branding:
+  icon: check-circle
+  color: blue

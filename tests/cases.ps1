@@ -54,6 +54,14 @@ $FixtureCases = @(
             Add-FixtureFile (Join-Path $dir 'tests' 'Failing.Tests.ps1') "Describe 'a failing test' {`n    It 'fails' {`n        1 | Should -Be 2`n    }`n}"
         }
     }
+    # A test that checks a written error passes as it does under Invoke-Pester's defaults: the
+    # checks' own stop-on-error preference must not turn the function's Write-Error into a throw.
+    [pscustomobject]@{ Name = 'test-checks-written-error'; ExpectExit = 0; ExpectText = 'pwsh-ci: all checks passed'; AllowNoTests = $false; Change = {
+            param($dir)
+            Add-FixtureFile (Join-Path $dir 'Public' 'Get-Missing.ps1') "function Get-Missing {`n    [CmdletBinding()]`n    param()`n`n    Write-Error 'not found'`n    'carried on'`n}"
+            Add-FixtureFile (Join-Path $dir 'tests' 'Get-Missing.Tests.ps1') "BeforeAll {`n    Import-Module (Join-Path `$PSScriptRoot '..' 'Clean.psm1') -Force`n}`n`nDescribe 'Get-Missing' {`n    It 'writes an error and carries on' {`n        `$output = Get-Missing 2>&1`n        `$output[0] | Should -BeOfType ([System.Management.Automation.ErrorRecord])`n        `$output[1] | Should -Be 'carried on'`n    }`n}"
+        }
+    }
     [pscustomobject]@{ Name = 'no-tests'; ExpectExit = 1; ExpectText = 'no tests'; AllowNoTests = $false; Change = {
             param($dir)
             Remove-Item (Join-Path $dir 'tests') -Recurse

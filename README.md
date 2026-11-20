@@ -46,7 +46,7 @@ fails.
 4. **Load.** With `module-manifest` set, the module is imported in a fresh `pwsh` that stops on the
    first error, so a loader that reports a broken file with `Write-Error` fails. A `.psd1` also goes
    through `Test-ModuleManifest`.
-5. **Test.** Pester 6 must pass, and must find tests unless `allow-no-tests` is `true`.
+5. **Test.** Pester 6 must pass, and must find tests unless `allow-no-tests` is `true`. The tests run under PowerShell's default error preference, as under a plain `Invoke-Pester`, so a test that checks a written error passes here too.
 
 Keep the settings file free of `IncludeRules`, so the default analyzer rules run alongside the
 formatting rules.

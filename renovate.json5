@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "automerge": false,
+  "customManagers": [
+    {
+      // Modules ci.ps1 installs. Renovate bumps a version only; the same PR must refresh
+      // that module's sha256 from its Gallery package.
+      "customType": "regex",
+      "managerFilePatterns": ["/^modules\\.pins$/"],
+      "matchStrings": ["(?<depName>\\S+) (?<currentValue>\\d+\\.\\d+\\.\\d+) sha256="],
+      "datasourceTemplate": "nuget",
+      "registryUrlTemplate": "https://www.powershellgallery.com/api/v2/"
+    }
+  ]
+}

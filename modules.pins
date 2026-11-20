@@ -1,0 +1,5 @@
+# Modules ci.ps1 installs from the PowerShell Gallery, each refused unless its package's
+# SHA-256 matches. Renovate updates a version; refresh its sha256 in the same change from
+# https://www.powershellgallery.com/api/v2/package/<name>/<version>.
+PSScriptAnalyzer 1.25.0 sha256=14e634c828eb98efb9f40b2918ba90f139ed5eccdf663a2a747736d996995d60
+Pester 6.2.0 sha256=e6ac7418d4f12500269aaca58ae56cf1caafbbf1afa2cec334e289d1cf50a239

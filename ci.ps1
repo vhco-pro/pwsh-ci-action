@@ -190,7 +190,17 @@ else {
     $configuration.Run.Path = $testsPath
     $configuration.Run.PassThru = $true
     $configuration.Output.Verbosity = 'Normal'
-    $result = Invoke-Pester -Configuration $configuration
+    # The tests run under PowerShell's default error preference, as they do under a plain
+    # Invoke-Pester, so this script's stop-on-error does not turn a Write-Error a test checks
+    # into a throw. Pester runs the tests in this script's session state, so a child scope
+    # is not enough: the script-level preference changes for the run and is restored after.
+    $ErrorActionPreference = 'Continue'
+    try {
+        $result = Invoke-Pester -Configuration $configuration
+    }
+    finally {
+        $ErrorActionPreference = 'Stop'
+    }
     if ($result.FailedCount -gt 0 -or $result.Result -ne 'Passed') {
         Write-CheckResult -Check 'test' -Passed $false -Detail "$($result.FailedCount) failed, $($result.PassedCount) passed"
     }

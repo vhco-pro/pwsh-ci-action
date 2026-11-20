@@ -1,0 +1,123 @@
+name: Test
+
+# The checks that must pass before release.yml tags. release.yml calls this
+# workflow, so the checks are defined once.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Lint workflows
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+        with:
+          args: -color
+
+  self-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check this repository with the action
+        uses: ./
+        with:
+          allow-no-tests: 'true'
+
+  fixtures:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up PowerShell
+        uses: vhco-pro/setup-pwsh-action@546ea415f9a1de6ed86d46796d839e61e20b4089 # unreleased: vhco-pro/setup-pwsh-action#1
+      - name: Run every fixture case through ci.ps1
+        shell: pwsh
+        run: ./tests/test-fixtures.ps1
+
+  cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      names: ${{ steps.list.outputs.names }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: List the fixture cases
+        id: list
+        shell: pwsh
+        run: ./tests/list-cases.ps1
+
+  compare:
+    needs: cases
+    strategy:
+      fail-fast: false
+      matrix:
+        case: ${{ fromJSON(needs.cases.outputs.names) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the fixture
+        id: fixture
+        shell: pwsh
+        env:
+          CASE: ${{ matrix.case }}
+        run: ./tests/build-fixture.ps1 -Name $env:CASE -Destination fixture
+      - name: Run the composite action
+        id: composite
+        continue-on-error: true
+        uses: ./
+        with:
+          path: fixture
+          module-manifest: Clean.psm1
+          allow-no-tests: ${{ steps.fixture.outputs.allow-no-tests }}
+      - name: Run ci.ps1 directly on the same fixture
+        id: direct
+        shell: pwsh
+        env:
+          ALLOW_NO_TESTS: ${{ steps.fixture.outputs.allow-no-tests }}
+        run: ./tests/run-direct.ps1 -Path fixture -AllowNoTests $env:ALLOW_NO_TESTS
+      - name: Compare the verdicts
+        shell: pwsh
+        env:
+          COMPOSITE_OUTCOME: ${{ steps.composite.outcome }}
+          DIRECT_EXIT: ${{ steps.direct.outputs.exit-code }}
+          EXPECT_EXIT: ${{ steps.fixture.outputs.expect-exit }}
+        run: ./tests/compare-verdicts.ps1 -CompositeOutcome $env:COMPOSITE_OUTCOME -DirectExit $env:DIRECT_EXIT -ExpectExit $env:EXPECT_EXIT

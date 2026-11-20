@@ -28,7 +28,7 @@ runs:
   steps:
     - name: Set up PowerShell
       id: pwsh
-      uses: vhco-pro/setup-pwsh-action@546ea415f9a1de6ed86d46796d839e61e20b4089 # unreleased: vhco-pro/setup-pwsh-action#1
+      uses: vhco-pro/setup-pwsh-action@a90bb078c3d694146ebc7c255404ac5057c85e2d # v0.1.0
     - name: Run the PowerShell checks
       shell: pwsh
       env:

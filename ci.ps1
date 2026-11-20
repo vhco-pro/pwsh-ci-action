@@ -174,7 +174,7 @@ if ($ModuleManifest) {
     }
 }
 
-# Test: Pester 5; no tests fails unless -AllowNoTests.
+# Test: Pester; no tests fails unless -AllowNoTests.
 $testsPath = Join-Path $root $Tests
 $testFiles = @(if (Test-Path -LiteralPath $testsPath) { Get-ChildItem -LiteralPath $testsPath -Recurse -File -Filter '*.Tests.ps1' })
 if ($testFiles.Count -eq 0) {

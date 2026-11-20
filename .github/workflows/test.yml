@@ -41,9 +41,15 @@ jobs:
         with:
           persist-credentials: false
       - name: Check this repository with the action
+        id: selfcheck
         uses: ./
         with:
           allow-no-tests: 'true'
+      - name: Check that pwsh steps run the pinned PowerShell
+        shell: pwsh
+        env:
+          REPORTED: ${{ steps.selfcheck.outputs.pwsh-version }}
+        run: ./tests/Assert-PinnedPwsh.ps1 -Expected $env:REPORTED
 
   fixtures:
     strategy:

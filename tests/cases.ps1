@@ -3,7 +3,8 @@
 # Each case copies tests/fixtures/clean and applies its change.
 
 function Add-FixtureFile([string]$Path, [string]$Content) {
-    Set-Content -LiteralPath $Path -Value $Content -Encoding utf8NoBOM
+    # LF throughout, so the file's line endings are consistent on every platform.
+    [IO.File]::WriteAllText($Path, ($Content -replace "`r`n", "`n") + "`n")
 }
 
 $FixtureCases = @(
@@ -21,6 +22,11 @@ $FixtureCases = @(
     [pscustomobject]@{ Name = 'wrong-casing'; ExpectExit = 1; ExpectText = 'pwsh-ci: format: FAILED'; AllowNoTests = $false; Change = {
             param($dir)
             Add-FixtureFile (Join-Path $dir 'Public' 'Get-Lower.ps1') "function Get-Lower {`n    [CmdletBinding()]`n    [OutputType([string])]`n    param()`n`n    write-output 'lower'`n}"
+        }
+    }
+    [pscustomobject]@{ Name = 'mixed-line-endings'; ExpectExit = 1; ExpectText = 'pwsh-ci: format: FAILED'; AllowNoTests = $false; Change = {
+            param($dir)
+            [IO.File]::WriteAllText((Join-Path $dir 'Public' 'Get-Mixed.ps1'), "function Get-Mixed {`r`n    [CmdletBinding()]`n    param()`r`n`n    'mixed'`n}`n")
         }
     }
     [pscustomobject]@{ Name = 'no-formatting-rule'; ExpectExit = 1; ExpectText = 'configures no formatting rule'; AllowNoTests = $false; Change = {

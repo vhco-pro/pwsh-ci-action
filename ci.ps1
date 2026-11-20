@@ -112,8 +112,16 @@ else {
     $different = foreach ($file in $files) {
         $text = [IO.File]::ReadAllText($file.FullName)
         if ($text.Length -eq 0) { continue }
-        $formatted = Invoke-Formatter -ScriptDefinition $text -Settings $settingsPath
-        if ($formatted -cne $text) { [IO.Path]::GetRelativePath($root, $file.FullName) }
+        $relative = [IO.Path]::GetRelativePath($root, $file.FullName)
+        try {
+            $formatted = Invoke-Formatter -ScriptDefinition $text -Settings $settingsPath
+        }
+        catch {
+            # Invoke-Formatter refuses some files, such as ones with mixed line endings.
+            "$relative (Invoke-Formatter: $($_.Exception.Message))"
+            continue
+        }
+        if ($formatted -cne $text) { $relative }
     }
     $different = @($different)
     if ($different.Count -gt 0) {
